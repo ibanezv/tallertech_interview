@@ -24,3 +24,25 @@ func (c *CreateEventController) Handler(fCtx *fiber.Ctx) error {
 
 	return fCtx.Status(fiber.StatusOK).JSON(eventResult)
 }
+
+func (c *CreateEventController) Validate(fCtx *fiber.Ctx) error {
+	var event domain.Event
+
+	if err := fCtx.BodyParser(&event); err != nil {
+		return fCtx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "bad request"})
+	}
+
+	if len(event.Description) == 0 || len(event.Description) > 100 {
+		return fCtx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "bad request"})
+	}
+
+	if !event.EndTime.After(event.StartTime) {
+		return fCtx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "bad request"})
+	}
+
+	return fCtx.Next()
+}
+
+func NewCreateEventController(uc usecase.EventCreation) *CreateEventController {
+	return &CreateEventController{useCase: uc}
+}
